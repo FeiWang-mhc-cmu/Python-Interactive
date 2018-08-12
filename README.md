@@ -1,5 +1,5 @@
 # Python-Interactive
-Completed Projects for "An Introduction to Interactive Programming in Python (Part1&2)" 
+Completed projects for "An Introduction to Interactive Programming in Python (Part1&2)" 
 by Rice University on Coursera 
 
 *** Note: This is reserved as a showplace for my proficiency in Python. 

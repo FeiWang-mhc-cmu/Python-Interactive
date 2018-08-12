@@ -5,3 +5,5 @@ by Rice University on Coursera
 *** Note: This is reserved as a showplace for my proficiency in Python. 
 
 *** Please do NOT copy and paste the codes for your homework.  
+
+*** Honor code matters!!!

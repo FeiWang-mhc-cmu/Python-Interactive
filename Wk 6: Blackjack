@@ -1,0 +1,260 @@
+Please run the code in codeskulptor.
+
+http://www.codeskulptor.org/#user45_hlMSckFskXuvxzJ.py
+
+# Mini-project #6 - Blackjack
+
+import simplegui
+import random
+
+# load card sprite - 936x384 - source: jfitz.com
+CARD_SIZE = (72, 96)
+CARD_CENTER = (36, 48)
+card_images = simplegui.load_image("http://storage.googleapis.com/codeskulptor-assets/cards_jfitz.png")
+
+CARD_BACK_SIZE = (72, 96)
+CARD_BACK_CENTER = (36, 48)
+card_back = simplegui.load_image("http://storage.googleapis.com/codeskulptor-assets/card_jfitz_back.png")    
+
+# initialize some useful global variables
+in_play = False
+outcome_p = ""
+outcome_d = ""
+new_deck = []
+player_score = 0
+dealer_score = 0
+state = 0
+# define globals for cards
+SUITS = ('C', 'S', 'H', 'D')
+RANKS = ('A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K')
+VALUES = {'A':1, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':10, 'Q':10, 'K':10}
+
+
+
+# define card class
+class Card:
+    def __init__(self, suit, rank):
+        if (suit in SUITS) and (rank in RANKS):
+            self.suit = suit
+            self.rank = rank
+        else:
+            self.suit = None
+            self.rank = None
+            print "Invalid card: ", suit, rank
+        self.card = self
+
+    def __str__(self):
+        return self.suit + self.rank
+
+    def get_suit(self):
+        return self.suit
+
+    def get_rank(self):
+        return self.rank
+
+    def draw(self, canvas, pos):
+        card_loc = (CARD_CENTER[0] + CARD_SIZE[0] * RANKS.index(self.rank), 
+                    CARD_CENTER[1] + CARD_SIZE[1] * SUITS.index(self.suit))
+        canvas.draw_image(card_images, card_loc, CARD_SIZE, 
+                          [pos[0] + CARD_CENTER[0], pos[1] + CARD_CENTER[1]], 
+                          CARD_SIZE)
+        
+# define hand class
+class Hand:
+    def __init__(self):
+        # create Hand object
+        self.hand = []
+        self.value = 0
+        
+    def __str__(self):
+        # return a string representation of a hand
+        ans = "Hand contains "
+        for i in range(len(self.hand)):
+            ans += str(self.hand[i]) + " "
+        return ans        
+
+    def add_card(self, card):
+        # add a card object to a hand
+        self.hand.append(card)
+
+    def get_value(self):
+        # count aces as 1, if the hand has an ace, then add 10 to hand value if it doesn't bust
+        if len(self.hand) > 0:
+            self.value = self.value + VALUES[self.hand[-1].rank]
+            if self.value <= 11 and VALUES[self.hand[-1].rank] == 1:
+                self.value = self.value + 10
+        return self.value
+       
+    
+    def draw(self, canvas, pos):
+        # draw a hand on the canvas, use the draw method for cards
+        for c in range(len(self.hand)):
+            pos[0] = pos[0] + 100
+            self.hand[c].draw(canvas, pos)    
+                
+
+        
+# define deck class 
+class Deck:
+    def __init__(self):
+        # create a Deck object 
+        self.deck = []   
+        
+        for suit in SUITS: 
+            for rank in RANKS:  
+                self.deck.append(Card(suit, rank))
+                                                   
+    def shuffle(self):
+        # shuffle the deck 
+        random.shuffle(self.deck)
+
+    def deal_card(self):
+        # deal a card object from the deck
+        deal = random.choice(self.deck)
+        self.deck.remove(deal)
+        return deal
+
+           
+    def __str__(self):
+        ans = "Deck contains "
+        for i in range(len(self.deck)):
+            ans += str(self.deck[i]) + " "
+        return ans
+        
+
+
+#define event handlers for buttons
+def deal():
+    global outcome_p, outcome_d, in_play, new_deck, state, player_score
+    if in_play == True:
+        state = 5
+        player_score -= 1
+    
+    else:
+        state = 0
+        new_deck = Deck() 
+        new_deck.shuffle()
+        player_hand = Hand()
+        dealer_hand = Hand()
+
+        player_hand.add_card(new_deck.deal_card())
+        player_hand.get_value()
+        player_hand.add_card(new_deck.deal_card())
+        player_hand.get_value()
+
+        dealer_hand.add_card(new_deck.deal_card())
+        dealer_hand.get_value()
+        dealer_hand.add_card(new_deck.deal_card())
+        dealer_hand.get_value()
+
+        outcome_p = player_hand
+        outcome_d = dealer_hand
+        print outcome_p, outcome_p.value
+        print outcome_d, outcome_d.value
+        in_play = True
+
+    
+def hit():
+    global outcome_p, in_play, new_deck, dealer_score, state
+    # if the hand is in play, hit the player
+    if in_play == True: 
+        if outcome_p.value <= 21:
+            outcome_p.add_card(new_deck.deal_card())
+            outcome_p.get_value()
+            print outcome_p, outcome_p.value
+    
+    # assign a message to outcome, update in_play and score
+            if outcome_p.value > 21:
+                print "You have busted! Dealer wins!"
+                state = 1
+                in_play = False
+                dealer_score += 1
+           
+      
+       
+def stand():
+    global outcome_d, in_play, new_deck, player_score, state, dealer_score
+    # if hand is in play, repeatedly hit dealer until his hand has value 17 or more
+    if in_play == True:
+        while outcome_d.value < 17:
+            outcome_d.add_card(new_deck.deal_card())
+            outcome_d.get_value()
+            print outcome_d, outcome_d.value   
+    # assign a message to outcome, update in_play and score
+            if outcome_d.value > 21:
+                print "Dealer has busted! You win!"                               
+                player_score += 1
+                state = 2
+                break
+        
+        if state != 2:
+            if outcome_d.value >= outcome_p.value:
+                print "Dealer wins!"
+                dealer_score += 1
+                state = 3
+                
+            else:
+                print "You win!"
+                player_score += 1
+                state = 4
+                
+    in_play = False          
+
+
+# draw handler    
+def draw(canvas):
+    # test to make sure that card.draw works, replace with your code below
+    global dealer_score, player_score, outcome_p, outcome_d, in_play
+    global CARD_BACK_SIZE, CARD_BACK_CENTER, CARD_SIZE, card_back
+
+    outcome_d.draw(canvas, [0,200])
+    outcome_p.draw(canvas, [0,400])
+           
+    canvas.draw_text("Dealer score: "+ str(dealer_score), (400, 50), 20, "Yellow")
+    canvas.draw_text("Player score: "+ str(player_score), (400, 100), 20, "Yellow")
+    if state !=0:
+        canvas.draw_text("Dealer: "+ str(outcome_d.value), (10, 250), 20, "Yellow")
+    canvas.draw_text("Player: " + str(outcome_p.value), (10, 450), 20, "Yellow")
+    
+    canvas.draw_text("Blackjack", (10, 60), 50, "White")   
+        
+    if state == 0:
+        canvas.draw_text("Hit or stand?", (100, 380), 20, "Yellow")
+        canvas.draw_text("Dealer: ", (10, 250), 20, "Yellow")
+        canvas.draw_image(card_back, CARD_BACK_CENTER, CARD_BACK_SIZE, 
+                          [CARD_BACK_CENTER[0]+100,CARD_BACK_CENTER[1]+200], CARD_BACK_SIZE)
+    if state == 1:
+        canvas.draw_text("You have busted! New deal?", (100, 380), 20, "Yellow")
+        canvas.draw_text("Dealer wins!", (100, 180), 20, "Yellow")
+    if state == 2:
+        canvas.draw_text("Dealer has busted!", (100, 180), 20, "Yellow")
+        canvas.draw_text("You win! New deal?", (100, 380), 20, "Yellow")
+    if state == 3:
+        canvas.draw_text("Dealer wins! New deal?", (100, 180), 20, "Yellow")
+    if state == 4:
+        canvas.draw_text("You win! New deal?", (100, 380), 20, "Yellow")
+    if state == 5:
+        canvas.draw_text("You lose! New deal?", (100, 380), 20, "Yellow")
+
+
+        
+    
+# initialization frame
+frame = simplegui.create_frame("Blackjack", 600, 600)
+frame.set_canvas_background("Green")
+
+#create buttons and canvas callback
+frame.add_button("Deal", deal, 200)
+frame.add_button("Hit",  hit, 200)
+frame.add_button("Stand", stand, 200)
+frame.set_draw_handler(draw)
+
+
+# get things rolling
+deal()
+frame.start()
+
+
+
+
+# remember to review the gradic rubric
